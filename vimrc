@@ -10,11 +10,12 @@ Plug 'ctrlpvim/ctrlp.vim'
 Plug 'jiangmiao/auto-pairs'
 Plug 'benmills/vimux'
 Plug 'christoomey/vim-tmux-navigator'
-Plug 'rking/ag.vim'
+" Plug 'rking/ag.vim'
+Plug 'mileszs/ack.vim'
 " Plug 'Shougo/unite.vim'
 Plug 'unblevable/quick-scope'
 Plug 'scrooloose/nerdtree'
-" Plug 'jistr/vim-nerdtree-tabs'
+Plug 'jistr/vim-nerdtree-tabs'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-git'
 " Plug 'easymotion/vim-easymotion'
@@ -32,12 +33,12 @@ Plug 'garyburd/go-explorer'
 
 
 if has('nvim')
-	Plug 'Shougo/deoplete.nvim'
+  function! DoRemote(arg)
+    UpdateRemotePlugins
+  endfunction
+	Plug 'Shougo/deoplete.nvim', { 'do': function('DoRemote') }
 	Plug 'zchee/deoplete-go', { 'do': 'make'}
 end
-
-Plug 'elzr/vim-json', {'for' : 'json'}
-
 
 call plug#end()
 
@@ -86,17 +87,29 @@ set smartcase                " ... but not it begins with upper case
 set smartindent
 set smarttab
 set autoindent
-set completeopt=menu,menuone
 set nocursorcolumn           " speed up syntax highlighting
 set nocursorline
 set wrap                          " Turn on line wrapping.
 set title                         " Set the terminal's title
 
-set pumheight=10             " Completion window max size
+syntax sync minlines=256
+set re=1
+
+" set pumheight=10             " Completion window max size
 
 "http://stackoverflow.com/questions/20186975/vim-mac-how-to-copy-to-clipboard-without-pbcopy
 set clipboard^=unnamed
 set clipboard^=unnamedplus
+
+" set ofu=syntaxcomplete#Complete
+
+" Better Completion
+set complete=.,w,b,u,t
+set completeopt=menu,menuone
+" /,noinsert,noselect
+" set completeopt+=noinsert
+" set completeopt+=noselect
+" set completeopt=longest,menuone
 
 set lazyredraw          " Wait to redraw
 
@@ -139,6 +152,18 @@ set history=1000
 let mapleader = ","
 let g:mapleader = ","
 
+" Some useful quickfix shortcuts for quickfix
+if has('nvim')
+  " I'm using location list in
+  map <C-n> :lnext<CR>
+  map <C-m> :lprevious<CR>
+  nnoremap <leader>a :lclose<CR>
+else
+  map <C-n> :cn<CR>
+  map <C-m> :cp<CR>
+  nnoremap <leader>a :cclose<CR>
+endif
+
 " Fast saving
 nnoremap <leader>w :w!<cr>
 nnoremap <silent> <leader>q :q!<CR>
@@ -155,6 +180,38 @@ nnoremap <leader>pr :Runtime<CR>
 " Close all but the current one
 nnoremap <leader>o :only<CR>
 
+" Terminal settings
+if has('nvim')
+  " Leader q to exit terminal mode. Somehow it jumps to the end, so jump to
+  " the top again
+  tnoremap <Leader>q <C-\><C-n>gg<cr>
+
+  " mappings to move out from terminal to other views
+  tnoremap <C-h> <C-\><C-n><C-w>h
+  tnoremap <C-j> <C-\><C-n><C-w>j
+  tnoremap <C-k> <C-\><C-n><C-w>k
+  tnoremap <C-l> <C-\><C-n><C-w>l
+
+  " Open terminal in vertical, horizontal and new tab
+  nnoremap <leader>tv :vsplit term://bash<CR>
+  nnoremap <leader>ts :split term://bash<CR>
+  " nnoremap <leader>tt :tabnew term://zsh<CR>
+
+  " always start terminal in insert mode
+  autocmd BufWinEnter,WinEnter term://* startinsert
+  " Time out on key codes but not mappings.
+  " Basically this makes terminal Vim work sanely.
+  set notimeout
+  set ttimeout
+  set ttimeoutlen=10
+  augroup FastEscape
+    autocmd!
+    au InsertEnter * set timeoutlen=0
+    au InsertLeave * set timeoutlen=1000
+  augroup END
+endif
+
+
 " syntastic
 " let g:syntastic_go_checkers = []
 " let g:syntastic_enable_signs=1
@@ -168,12 +225,6 @@ nnoremap <leader>o :only<CR>
 
 " Make it obvious where 80 characters is
 " 
-let &colorcolumn=join(range(81,999),",")
-set textwidth=80
-highlight ColorColumn ctermbg=235
-" call matchadd('ColorColumn', '\%81v', 81)
-" set formatoptions+=t
-"
 
 " ==================== NerdTree ====================
 " For toggling
@@ -318,9 +369,6 @@ noremap   <Right>  <NOP>
 " Remap jj to escape
 inoremap jj <Esc>
 
-" Fast saving
-nmap <leader>w :w<cr>
-
 " General cursor moves in insert mode
 inoremap <c-k> <esc>O
 inoremap <c-l> <esc>A
@@ -340,25 +388,29 @@ inoremap <c-j> <esc>o
 nmap <F4> :TagbarToggle<CR>
 
 
-let g:go_fmt_fail_silently = 1
+" ==================== Fugitive ====================
+vnoremap <leader>gb :Gblame<CR>
+nnoremap <leader>gb :Gblame<CR>
+
+let g:go_fmt_fail_silently = 0
 let g:go_autodetect_gopath = 1
 let g:go_bin_path = "/home/sunil/workspace/main/go/bin"
 
-let g:go_highlight_space_tab_error = 0
-let g:go_highlight_array_whitespace_error = 0
-let g:go_highlight_trailing_whitespace_error = 0
-let g:go_highlight_extra_types = 0
-let g:go_highlight_operators = 0
+let g:go_highlight_space_tab_error = 1
+let g:go_highlight_array_whitespace_error = 1
+let g:go_highlight_trailing_whitespace_error = 1
+let g:go_highlight_extra_types = 1
+let g:go_highlight_operators = 1
 let g:go_highlight_build_constraints = 1
 
 let g:go_play_open_browser = 0
-" let g:go_fmt_autosave = 0
 " let g:go_fmt_command = "/home/sunil/workspace/toolchain/go1.3.1/bin/gofmt -tabs=false -tabwidth=2"
 let g:go_fmt_command = "gofmt"
 " -tabs=false -tabwidth=2"
 let g:go_fmt_options = "-tabs=false -tabwidth=2"
 let g:go_goimports_bin = "/home/sunil/workspace/main/go/bin/goimports"
 " let g:go_fmt_command = "/home/sunil/workspace/main/go/bin/goimports"
+let g:go_fmt_autosave = 1
 
 nmap <C-g> :GoDecls<cr>
 imap <C-g> <esc>:<C-u>GoDecls<cr>
@@ -369,13 +421,13 @@ au FileType go nmap <Leader>s <Plug>(go-def-split)
 au FileType go nmap <Leader>i <Plug>(go-info)
 au FileType go nmap <Leader>l <Plug>(go-metalinter)
 
-au FileType go nmap <leader>b  <Plug>(go-build)
-au FileType go nmap <leader>t  <Plug>(go-test)
+" au FileType go nmap <leader>b  <Plug>(go-build)
+" au FileType go nmap <leader>t  <Plug>(go-test)
 
-au FileType go nmap <leader>r  <Plug>(go-run)
+" au FileType go nmap <leader>r  <Plug>(go-run)
 
 au FileType go nmap <Leader>d <Plug>(go-doc)
-au FileType go nmap <Leader>c <Plug>(go-coverage-toggle)
+" au FileType go nmap <Leader>c <Plug>(go-coverage-toggle)
 
 au FileType go nmap <Leader>nn :GoImports<CR>:w<CR>
 
@@ -390,12 +442,6 @@ augroup END
 
 au BufRead,BufNewFile *.md set filetype=markdown
 " au BufWritePost *.go silent! !~/.vim-go/gotags -R -sort *.go > tags &
-au FileType go nmap <Leader>i <Plug>(go-info)
-au FileType go nmap <Leader>gd <Plug>(go-doc)
-au FileType go nmap <Leader>gv <Plug>(go-doc-vertical)
-au FileType go nmap <Leader>dv <Plug>(go-def-vertical)
-au FileType go nmap <Leader>cc :GoOracleCallers<cr>
-au FileType go nmap <Leader>cg :GoOracleCallgraph<cr>
 
 let g:VimuxOrientation = "h"
 let g:VimuxHeight = "40"
@@ -442,18 +488,21 @@ nmap <silent> <leader>ev :e $MYVIMRC<CR>
 if has('nvim')
   let g:deoplete#enable_at_startup = 1
   let g:deoplete#ignore_sources = {}
-  let g:deoplete#ignore_sources._ = ['buffer', 'member', 'tag', 'file', 'neosnippet']
-  let g:deoplete#sources#go#sort_class = ['func', 'type', 'var', 'const']
+  " let g:deoplete#ignore_sources._ = ['buffer', 'member', 'file', 'neosnippet']
+  let g:deoplete#sources#go#sort_class = ['package', 'func', 'type', 'var', 'const']
   let g:deoplete#sources#go#align_class = 1
+  " insert . automatically after a package name
   let g:deoplete#sources#go#package_dot = 1
   let g:deoplete#sources#go#pointer = 1
+  let g:deoplete#sources#go#use_cache = 1
+  let g:deoplete#sources#go#json_directory = '~/.cache/deoplete/go/$GOOS_$GOARCH'
 
 
   " Use partial fuzzy matches like YouCompleteMe
-  call deoplete#custom#set('_', 'matchers', ['matcher_fuzzy'])
-  call deoplete#custom#set('_', 'converters', ['converter_remove_paren'])
-  call deoplete#custom#set('_', 'disabled_syntaxes', ['Comment', 'String'])
-
+  " call deoplete#custom#set('_', 'matchers', ['matcher_fuzzy'])
+  " call deoplete#custom#set('_', 'converters', ['converter_remove_paren'])
+  " call deoplete#custom#set('_', 'disabled_syntaxes', ['Comment', 'String'])
+  "
   " deoplete tab-complete
   " inoremap <silent><expr><Tab> pumvisible() ? "\<C-n>" : "\<tab>"
 endif
@@ -625,5 +674,14 @@ nmap  -  <Plug>(choosewin)
 
 " Trigger a highlight in the appropriate direction when pressing these keys:
 let g:qs_highlight_on_keys = ['f', 'F', 't', 'T']
+
+let &colorcolumn=join(range(81,999),",")
+" let &colorcolumn="80,".join(range(400,999),",")
+highlight ColorColumn ctermbg=236
+" highlight ColorColumn ctermbg=gray
+set textwidth=80
+" call matchadd('ColorColumn', '\%81v', 81)
+set formatoptions+=t
+"
 
 " vim:ts=2:sw=2:et
